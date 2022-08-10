@@ -1,6 +1,6 @@
 self.addEventListener("install", function (event) {
     event.waitUntil(
-        caches.open("static").then((cache) => {
+        caches.open("static-v3").then((cache) => {
             cache.addAll([
                 "/",
                 "/index.html",
@@ -21,6 +21,17 @@ self.addEventListener("install", function (event) {
 });
 
 self.addEventListener("activate", function (event) {
+    event.waitUntil(
+        caches.keys().then((keys) => {
+            return Promise.all(
+                keys.map((key) => {
+                    if (key !== "static-v3" && key !== "dynamic") {
+                        return caches.delete(key);
+                    }
+                })
+            );
+        })
+    );
     return self.clients.claim();
 });
 
@@ -36,12 +47,14 @@ self.addEventListener("fetch", function (event) {
                 return response;
             } else {
                 console.log(`Adding ${event.request.url} to cache.`);
-                return fetch(event.request).then((response) => {
-                    caches.open("dynamic").then((cache) => {
-                        cache.put(event.request.url, response.clone());
-                        return response;
-                    });
-                });
+                return fetch(event.request)
+                    .then((response) => {
+                        caches.open("dynamic").then((cache) => {
+                            cache.put(event.request.url, response.clone());
+                            return response;
+                        });
+                    })
+                    .catch((error) => {});
             }
         })
     );
