@@ -1,6 +1,8 @@
+const VERSION = "static-v6";
+
 self.addEventListener("install", function (event) {
     event.waitUntil(
-        caches.open("static-v3").then((cache) => {
+        caches.open(VERSION).then((cache) => {
             cache.addAll([
                 "/",
                 "/index.html",
@@ -25,7 +27,7 @@ self.addEventListener("activate", function (event) {
         caches.keys().then((keys) => {
             return Promise.all(
                 keys.map((key) => {
-                    if (key !== "static-v3" && key !== "dynamic") {
+                    if (key !== VERSION && key !== "dynamic") {
                         return caches.delete(key);
                     }
                 })

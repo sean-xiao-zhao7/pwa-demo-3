@@ -1,3 +1,4 @@
+console.log("GOT HERE");
 var shareImageButton = document.querySelector("#share-image-button");
 var createPostArea = document.querySelector("#create-post");
 var closeCreatePostModalButton = document.querySelector(
@@ -50,6 +51,19 @@ function createCard() {
     cardSupportingText.className = "mdl-card__supporting-text";
     cardSupportingText.textContent = "In San Francisco";
     cardSupportingText.style.textAlign = "center";
+
+    const button = document.createElement("button");
+    button.textContent = "Cache me";
+    button.addEventListener("click", () => {
+        if ("caches" in window) {
+            caches.open("button").then((cache) => {
+                cache.add("https://httpbin.org/get");
+                cache.add("/src/images/sf-boat.jpg");
+            });
+        }
+    });
+    cardSupportingText.appendChild(button);
+
     cardWrapper.appendChild(cardSupportingText);
     componentHandler.upgradeElement(cardWrapper);
     sharedMomentsArea.appendChild(cardWrapper);
@@ -57,6 +71,7 @@ function createCard() {
 
 fetch("https://httpbin.org/get")
     .then(function (res) {
+        console.log(res);
         return res.json();
     })
     .then(function (data) {
