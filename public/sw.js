@@ -27,10 +27,21 @@ self.addEventListener("activate", function (event) {
 self.addEventListener("fetch", function (event) {
     event.respondWith(
         caches.match(event.request).then((response) => {
-            if (response) {
+            console.log(
+                response == undefined
+                    ? `Did not find ${event.request.url} in cache.`
+                    : `Found ${event.request.url} in cache.`
+            );
+            if (response != undefined) {
                 return response;
             } else {
-                return fetch(event.request);
+                console.log(`Adding ${event.request.url} to cache.`);
+                return fetch(event.request).then((response) => {
+                    caches.open("dynamic").then((cache) => {
+                        cache.put(event.request.url, response.clone());
+                        return response;
+                    });
+                });
             }
         })
     );
