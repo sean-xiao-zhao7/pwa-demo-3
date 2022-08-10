@@ -1,4 +1,4 @@
-const VERSION = "static-v6";
+const VERSION = "static-v14";
 
 self.addEventListener("install", function (event) {
     event.waitUntil(
@@ -6,6 +6,7 @@ self.addEventListener("install", function (event) {
             cache.addAll([
                 "/",
                 "/index.html",
+                "/offline.html",
                 "/src/js/app.js",
                 "/src/js/feed.js",
                 "/src/js/promise.js",
@@ -51,12 +52,20 @@ self.addEventListener("fetch", function (event) {
                 console.log(`Adding ${event.request.url} to cache.`);
                 return fetch(event.request)
                     .then((response) => {
+                        console.log(response);
                         caches.open("dynamic").then((cache) => {
                             cache.put(event.request.url, response.clone());
                             return response;
                         });
                     })
-                    .catch((error) => {});
+                    .catch((error) => {
+                        console.log(error);
+                        return caches.open(VERSION).then((cache) => {
+                            return cache
+                                .match("/offline.html")
+                                .then((response) => response);
+                        });
+                    });
             }
         })
     );
