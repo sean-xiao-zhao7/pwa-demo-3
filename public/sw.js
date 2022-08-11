@@ -1,25 +1,26 @@
-const VERSION = "static-v17";
-const DYNAMIC_VERSION = "dynamic-v1";
+const VERSION = "static-v20";
+const DYNAMIC_VERSION = "dynamic";
+const staticAssets = [
+    "/",
+    "/index.html",
+    "/offline.html",
+    "/src/js/app.js",
+    "/src/js/feed.js",
+    "/src/js/promise.js",
+    "/src/js/fetch.js",
+    "/src/js/material.min.js",
+    "/src/css/app.css",
+    "/src/css/feed.css",
+    "/src/images/main-image.jpg",
+    "https://fonts.googleapis.com/css?family=Roboto:400,700",
+    "https://fonts.googleapis.com/icon?family=Material+Icons",
+    "https://cdnjs.cloudflare.com/ajax/libs/material-design-lite/1.3.0/material.indigo-pink.min.css",
+];
 
 self.addEventListener("install", function (event) {
     event.waitUntil(
         caches.open(VERSION).then((cache) => {
-            cache.addAll([
-                "/",
-                "/index.html",
-                "/offline.html",
-                "/src/js/app.js",
-                "/src/js/feed.js",
-                "/src/js/promise.js",
-                "/src/js/fetch.js",
-                "/src/js/material.min.js",
-                "/src/css/app.css",
-                "/src/css/feed.css",
-                "/src/images/main-image.jpg",
-                "https://fonts.googleapis.com/css?family=Roboto:400,700",
-                "https://fonts.googleapis.com/icon?family=Material+Icons",
-                "https://cdnjs.cloudflare.com/ajax/libs/material-design-lite/1.3.0/material.indigo-pink.min.css",
-            ]);
+            cache.addAll(staticAssets);
         })
     );
 });
@@ -29,7 +30,7 @@ self.addEventListener("activate", function (event) {
         caches.keys().then((keys) => {
             return Promise.all(
                 keys.map((key) => {
-                    if (key !== VERSION && key !== "dynamic") {
+                    if (key !== VERSION && key !== DYNAMIC_VERSION) {
                         return caches.delete(key);
                     }
                 })
@@ -51,6 +52,12 @@ self.addEventListener("fetch", (event) => {
                 });
             })
         );
+    } else if (
+        new RegExp("\\b" + staticAssets.join("\\b|\\b") + "\\b").test(
+            event.request.url
+        )
+    ) {
+        event.respondWith(caches.match(event.request));
     } else {
         event.respondWith(
             caches.match(event.request).then((response) => {
@@ -65,16 +72,18 @@ self.addEventListener("fetch", (event) => {
                     console.log(`Adding ${event.request.url} to cache.`);
                     return fetch(event.request)
                         .then((response) => {
-                            caches.open("dynamic").then((cache) => {
+                            caches.open(DYNAMIC_VERSION).then((cache) => {
                                 cache.put(event.request.url, response.clone());
                                 return response;
                             });
                         })
                         .catch((_) => {
                             return caches.open(VERSION).then((cache) => {
-                                return cache
-                                    .match("/offline.html")
-                                    .then((response) => response);
+                                if (event.request.url.indexOf("/help")) {
+                                    return cache
+                                        .match("/offline.html")
+                                        .then((response) => response);
+                                }
                             });
                         });
                 }
@@ -82,34 +91,3 @@ self.addEventListener("fetch", (event) => {
         );
     }
 });
-
-// self.addEventListener("fetch", function (event) {
-//     event.respondWith(
-//         caches.match(event.request).then((response) => {
-//             console.log(
-//                 response == undefined
-//                     ? `Did not find ${event.request.url} in cache.`
-//                     : `Found ${event.request.url} in cache.`
-//             );
-//             if (response != undefined) {
-//                 return response;
-//             } else {
-//                 console.log(`Adding ${event.request.url} to cache.`);
-//                 return fetch(event.request)
-//                     .then((response) => {
-//                         caches.open("dynamic").then((cache) => {
-//                             cache.put(event.request.url, response.clone());
-//                             return response;
-//                         });
-//                     })
-//                     .catch((_) => {
-//                         return caches.open(VERSION).then((cache) => {
-//                             return cache
-//                                 .match("/offline.html")
-//                                 .then((response) => response);
-//                         });
-//                     });
-//             }
-//         })
-//     );
-// });

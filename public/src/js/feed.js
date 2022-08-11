@@ -1,4 +1,3 @@
-console.log("GOT HERE");
 var shareImageButton = document.querySelector("#share-image-button");
 var createPostArea = document.querySelector("#create-post");
 var closeCreatePostModalButton = document.querySelector(
