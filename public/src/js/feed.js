@@ -66,14 +66,36 @@ function createCard() {
 
     cardWrapper.appendChild(cardSupportingText);
     componentHandler.upgradeElement(cardWrapper);
+    sharedMomentsArea.innerHTML = "";
     sharedMomentsArea.appendChild(cardWrapper);
 }
 
-fetch("https://httpbin.org/get")
-    .then(function (res) {
-        console.log(res);
-        return res.json();
+let fetchUrl = "https://httpbin.org/get";
+let networkFetchComplete = false;
+
+// fetch by network first
+fetch(fetchUrl)
+    .then((response) => {
+        if (response != undefined) {
+            return response.json();
+        }
     })
-    .then(function (data) {
+    .then((data) => {
+        networkFetchComplete = true;
         createCard();
     });
+
+// fetch by cache next
+if (!networkFetchComplete && "caches" in window) {
+    caches
+        .match(fetchUrl)
+        .then((response) => {
+            if (response != undefined) {
+                return response.json();
+            } else {
+            }
+        })
+        .then((data) => {
+            createCard();
+        });
+}
