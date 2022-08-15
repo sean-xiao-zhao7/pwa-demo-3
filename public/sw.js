@@ -1,4 +1,4 @@
-const VERSION = "static-v21";
+const VERSION = "static-v23";
 const DYNAMIC_VERSION = "dynamic";
 const staticAssets = [
     "/",
@@ -16,6 +16,8 @@ const staticAssets = [
     "https://fonts.googleapis.com/icon?family=Material+Icons",
     "https://cdnjs.cloudflare.com/ajax/libs/material-design-lite/1.3.0/material.indigo-pink.min.css",
 ];
+
+const db = openDB("posts-store");
 
 self.addEventListener("install", function (event) {
     event.waitUntil(

@@ -100,6 +100,6 @@ if (!networkFetchComplete && "caches" in window) {
             }
         })
         .then((data) => {
-            updateUI(Object.values(data));
+            // updateUI(Object.values(data));
         });
 }
