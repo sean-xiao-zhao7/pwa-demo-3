@@ -32,23 +32,29 @@ shareImageButton.addEventListener("click", openCreatePostModal);
 
 closeCreatePostModalButton.addEventListener("click", closeCreatePostModal);
 
-function createCard() {
+const updateUI = (tripsData) => {
+    tripsData.map((tripData) => {
+        createCard(tripData);
+    });
+};
+
+function createCard(tripData) {
     var cardWrapper = document.createElement("div");
     cardWrapper.className = "shared-moment-card mdl-card mdl-shadow--2dp";
     var cardTitle = document.createElement("div");
     cardTitle.className = "mdl-card__title";
-    cardTitle.style.backgroundImage = 'url("/src/images/sf-boat.jpg")';
+    cardTitle.style.backgroundImage = `url("${tripData["image-url"]}")`;
     cardTitle.style.backgroundSize = "cover";
     cardTitle.style.height = "180px";
     cardWrapper.appendChild(cardTitle);
     var cardTitleTextElement = document.createElement("h2");
     cardTitleTextElement.className = "mdl-card__title-text";
-    cardTitleTextElement.textContent = "San Francisco Trip";
+    cardTitleTextElement.textContent = tripData["title"];
     cardTitleTextElement.style.color = "yellow";
     cardTitle.appendChild(cardTitleTextElement);
     var cardSupportingText = document.createElement("div");
     cardSupportingText.className = "mdl-card__supporting-text";
-    cardSupportingText.textContent = "In San Francisco";
+    cardSupportingText.textContent = tripData["location"];
     cardSupportingText.style.textAlign = "center";
 
     const button = document.createElement("button");
@@ -65,11 +71,10 @@ function createCard() {
 
     cardWrapper.appendChild(cardSupportingText);
     componentHandler.upgradeElement(cardWrapper);
-    sharedMomentsArea.innerHTML = "";
     sharedMomentsArea.appendChild(cardWrapper);
 }
 
-let fetchUrl = "https://httpbin.org/get";
+let fetchUrl = "https://pwa1-175df-default-rtdb.firebaseio.com/posts.json";
 let networkFetchComplete = false;
 
 // fetch by network first
@@ -81,7 +86,7 @@ fetch(fetchUrl)
     })
     .then((data) => {
         networkFetchComplete = true;
-        createCard();
+        updateUI(Object.values(data));
     });
 
 // fetch by cache next
@@ -95,6 +100,6 @@ if (!networkFetchComplete && "caches" in window) {
             }
         })
         .then((data) => {
-            createCard();
+            updateUI(Object.values(data));
         });
 }

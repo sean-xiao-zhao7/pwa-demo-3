@@ -1,4 +1,4 @@
-const VERSION = "static-v20";
+const VERSION = "static-v21";
 const DYNAMIC_VERSION = "dynamic";
 const staticAssets = [
     "/",
@@ -41,7 +41,7 @@ self.addEventListener("activate", function (event) {
 });
 
 self.addEventListener("fetch", (event) => {
-    let fetchUrl = "https://httpbin.org/get";
+    let fetchUrl = "https://pwa1-175df-default-rtdb.firebaseio.com/posts.json";
 
     if (event.request.url.indexOf(fetchUrl) > -1) {
         event.respondWith(
