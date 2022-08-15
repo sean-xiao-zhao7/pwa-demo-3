@@ -4,9 +4,15 @@ var closeCreatePostModalButton = document.querySelector(
     "#close-create-post-modal-btn"
 );
 var sharedMomentsArea = document.querySelector("#shared-moments");
+var form = document.querySelector("form");
+var titleInput = document.querySelector("#title");
+var locationInput = document.querySelector("#location");
 
 function openCreatePostModal() {
-    createPostArea.style.display = "block";
+    // createPostArea.style.display = 'block';
+    // setTimeout(function() {
+    createPostArea.style.transform = "translateY(0)";
+    // }, 1);
     if (deferredPrompt) {
         deferredPrompt.prompt();
 
@@ -22,84 +28,125 @@ function openCreatePostModal() {
 
         deferredPrompt = null;
     }
+
+    // if ('serviceWorker' in navigator) {
+    //   navigator.serviceWorker.getRegistrations()
+    //     .then(function(registrations) {
+    //       for (var i = 0; i < registrations.length; i++) {
+    //         registrations[i].unregister();
+    //       }
+    //     })
+    // }
 }
 
 function closeCreatePostModal() {
-    createPostArea.style.display = "none";
+    createPostArea.style.transform = "translateY(100vh)";
+    // createPostArea.style.display = 'none';
 }
 
 shareImageButton.addEventListener("click", openCreatePostModal);
 
 closeCreatePostModalButton.addEventListener("click", closeCreatePostModal);
 
-const updateUI = (tripsData) => {
-    tripsData.map((tripData) => {
-        createCard(tripData);
-    });
-};
+// Currently not in use, allows to save assets in cache on demand otherwise
+function onSaveButtonClicked(event) {
+    console.log("clicked");
+    if ("caches" in window) {
+        caches.open("user-requested").then(function (cache) {
+            cache.add("https://httpbin.org/get");
+            cache.add("/src/images/sf-boat.jpg");
+        });
+    }
+}
 
-function createCard(tripData) {
+function clearCards() {
+    while (sharedMomentsArea.hasChildNodes()) {
+        sharedMomentsArea.removeChild(sharedMomentsArea.lastChild);
+    }
+}
+
+function createCard(data) {
     var cardWrapper = document.createElement("div");
     cardWrapper.className = "shared-moment-card mdl-card mdl-shadow--2dp";
     var cardTitle = document.createElement("div");
     cardTitle.className = "mdl-card__title";
-    cardTitle.style.backgroundImage = `url("${tripData["image-url"]}")`;
+    cardTitle.style.backgroundImage = "url(" + data.image + ")";
     cardTitle.style.backgroundSize = "cover";
-    cardTitle.style.height = "180px";
     cardWrapper.appendChild(cardTitle);
     var cardTitleTextElement = document.createElement("h2");
+    cardTitleTextElement.style.color = "white";
     cardTitleTextElement.className = "mdl-card__title-text";
-    cardTitleTextElement.textContent = tripData["title"];
-    cardTitleTextElement.style.color = "yellow";
+    cardTitleTextElement.textContent = data.title;
     cardTitle.appendChild(cardTitleTextElement);
     var cardSupportingText = document.createElement("div");
     cardSupportingText.className = "mdl-card__supporting-text";
-    cardSupportingText.textContent = tripData["location"];
+    cardSupportingText.textContent = data.location;
     cardSupportingText.style.textAlign = "center";
-
-    const button = document.createElement("button");
-    button.textContent = "Cache me";
-    button.addEventListener("click", () => {
-        if ("caches" in window) {
-            caches.open("button").then((cache) => {
-                cache.add("https://httpbin.org/get");
-                cache.add("/src/images/sf-boat.jpg");
-            });
-        }
-    });
-    cardSupportingText.appendChild(button);
-
+    // var cardSaveButton = document.createElement('button');
+    // cardSaveButton.textContent = 'Save';
+    // cardSaveButton.addEventListener('click', onSaveButtonClicked);
+    // cardSupportingText.appendChild(cardSaveButton);
     cardWrapper.appendChild(cardSupportingText);
     componentHandler.upgradeElement(cardWrapper);
     sharedMomentsArea.appendChild(cardWrapper);
 }
 
-let fetchUrl = "https://pwa1-175df-default-rtdb.firebaseio.com/posts.json";
-let networkFetchComplete = false;
+function updateUI(data) {
+    clearCards();
+    for (var i = 0; i < data.length; i++) {
+        createCard(data[i]);
+    }
+}
 
-// fetch by network first
-fetch(fetchUrl)
-    .then((response) => {
-        if (response != undefined) {
-            return response.json();
-        }
+var url = "https://pwagram-99adf.firebaseio.com/posts.json";
+var networkDataReceived = false;
+
+fetch(url)
+    .then(function (res) {
+        return res.json();
     })
-    .then((data) => {
-        networkFetchComplete = true;
-        updateUI(Object.values(data));
+    .then(function (data) {
+        networkDataReceived = true;
+        console.log("From web", data);
+        var dataArray = [];
+        for (var key in data) {
+            dataArray.push(data[key]);
+        }
+        updateUI(dataArray);
     });
 
-// fetch by cache next
-if (!networkFetchComplete && "caches" in window) {
-    caches
-        .match(fetchUrl)
-        .then((response) => {
-            if (response != undefined) {
-                return response.json();
-            } else {
-            }
-        })
-        .then((data) => {
-            updateUI(Object.values(data));
-        });
+if ("indexedDB" in window) {
+    readAllData("posts").then(function (data) {
+        if (!networkDataReceived) {
+            console.log("From cache", data);
+            updateUI(data);
+        }
+    });
 }
+
+form.addEventListener("submit", function (event) {
+    event.preventDefault();
+
+    if (titleInput.value.trim() === "" || locationInput.value.trim() === "") {
+        alert("Please enter valid data!");
+        return;
+    }
+
+    closeCreatePostModal();
+
+    if ("serviceWorker" in navigator && "SyncManager" in window) {
+        navigator.serviceWorker.ready.then((worker) => {
+            const post = {
+                title: titleInput.value,
+                location: locationInput.value,
+                id: new Date().toISOString(),
+            };
+            writeData("sync-post", post)
+                .then(() => {
+                    return worker.sync.register("newPost");
+                })
+                .then(() => {});
+        });
+    } else {
+    }
+});
